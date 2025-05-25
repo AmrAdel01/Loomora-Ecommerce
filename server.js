@@ -8,6 +8,9 @@ dotenv.config();
 const connectDB = require("./config/db");
 const authRouter = require("./routes/auth");
 const productRouter = require("./routes/products");
+const cartRouter = require("./routes/cart");
+const couponRouter = require("./routes/coupon");
+const categoryRouter = require("./routes/category");
 
 // Middleware
 const globalErrorHandler = require("./middleware/errorHandler");
@@ -34,6 +37,10 @@ app.get("/", (req, res) => {
 // Routes hook
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productRouter);
+app.use("/api/v1/cart", cartRouter);
+app.use("/api/v1/", couponRouter);
+app.use("/api/v1/categories", categoryRouter);
+
 // Error Handling
 app.use(routeNotFoundHandler);
 app.use(globalErrorHandler);

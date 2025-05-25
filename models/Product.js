@@ -41,30 +41,15 @@ const productSchema = new mongoose.Schema(
       trim: true,
       minlength: [10, "Description must be at least 10 characters long"],
     },
+
     category: {
-      type: String,
-      enum: {
-        values: ["men", "women", "kids", "accessories", "footwear"],
-        message: "{VALUE} is not a valid category",
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       required: [true, "Category is required"],
     },
     subcategory: {
-      type: String,
-      enum: {
-        values: [
-          "shirts",
-          "t-shirts",
-          "pants",
-          "dresses",
-          "jackets",
-          "jeans",
-          "activewear",
-          "underwear",
-          "socks",
-        ],
-        message: "{VALUE} is not a valid subcategory",
-      },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
     },
     brand: {
       type: String,
