@@ -1,6 +1,6 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
-const Coupon = require("../models/Coupon");
+const Coupon = require("../models/functions/Coupon");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("express-async-handler");
 

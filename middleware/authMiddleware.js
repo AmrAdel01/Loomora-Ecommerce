@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/ApiError");
 const User = require("../models/User");
-const BlacklistedToken = require("../models/BlacklistedToken");
+const BlacklistedToken = require("../models/functions/BlacklistedToken");
 
 exports.protect = asyncHandler(async (req, res, next) => {
   // 1. Extract token from Authorization header

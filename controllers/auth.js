@@ -2,8 +2,8 @@ const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/ApiError");
 const sendEmail = require("../utils/sendEmail");
-const BlacklistedToken = require("../models/BlacklistedToken");
-const AuditLog = require("../models/AuditLog");
+const BlacklistedToken = require("../models/functions/BlacklistedToken");
+const AuditLog = require("../models/functions/AuditLog");
 
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");

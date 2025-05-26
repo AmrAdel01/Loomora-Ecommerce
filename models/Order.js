@@ -48,6 +48,7 @@ const orderSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  stripePaymentIntentId: String, // Add this field for Stripe integration
   trackingNumber: String,
   estimatedDeliveryDate: Date,
   createdAt: {
@@ -55,6 +56,12 @@ const orderSchema = new mongoose.Schema({
     default: Date.now,
   },
   updatedAt: Date,
+  // New fields
+  deliveryInstructions: String,
+  couponCode: String,
+  discountAmount: Number,
+  taxAmount: Number,
+  shippingCost: Number,
 });
 
 module.exports = mongoose.model("Order", orderSchema);

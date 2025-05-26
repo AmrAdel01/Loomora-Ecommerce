@@ -11,6 +11,8 @@ const productRouter = require("./routes/products");
 const cartRouter = require("./routes/cart");
 const couponRouter = require("./routes/coupon");
 const categoryRouter = require("./routes/category");
+const orderRouter = require("./routes/order");
+const paymentRoutes = require("./routes/payment");
 
 // Middleware
 const globalErrorHandler = require("./middleware/errorHandler");
@@ -20,6 +22,10 @@ const routeNotFoundHandler = require("./middleware/routeNotFoundHandler");
 const app = express();
 
 // Middleware
+// Special handling for Stripe webhook route
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
+// Regular JSON parsing for other routes
 app.use(express.json());
 app.use(cors());
 
@@ -40,6 +46,8 @@ app.use("/api/v1/products", productRouter);
 app.use("/api/v1/cart", cartRouter);
 app.use("/api/v1/", couponRouter);
 app.use("/api/v1/categories", categoryRouter);
+app.use("/api/v1/orders", orderRouter);
+app.use("/api/payments", paymentRoutes);
 
 // Error Handling
 app.use(routeNotFoundHandler);
