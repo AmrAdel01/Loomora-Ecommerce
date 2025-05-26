@@ -41,14 +41,24 @@ const orderSchema = new mongoose.Schema({
   },
   paymentStatus: {
     type: String,
-    enum: ["pending", "completed", "failed", "refunded"],
+    enum: ["pending", "completed", "failed", "refunded", "partially_refunded"],
     default: "pending",
   },
   paymentMethod: {
     type: String,
     required: true,
   },
-  stripePaymentIntentId: String, // Add this field for Stripe integration
+  stripePaymentIntentId: String,
+  paymentAttempts: [
+    {
+      attemptedAt: Date,
+      status: String,
+      errorMessage: String,
+    },
+  ],
+  refundId: String,
+  refundAmount: Number,
+  refundReason: String,
   trackingNumber: String,
   estimatedDeliveryDate: Date,
   createdAt: {
@@ -56,12 +66,32 @@ const orderSchema = new mongoose.Schema({
     default: Date.now,
   },
   updatedAt: Date,
-  // New fields
   deliveryInstructions: String,
   couponCode: String,
   discountAmount: Number,
   taxAmount: Number,
   shippingCost: Number,
 });
+
+// Virtual for total items count
+orderSchema.virtual("itemCount").get(function () {
+  return this.items.reduce((total, item) => total + item.quantity, 0);
+});
+
+// Method to calculate order summary
+orderSchema.methods.getOrderSummary = function () {
+  const subtotal = this.totalAmount;
+  const discount = this.discountAmount || 0;
+  const tax = this.taxAmount || 0;
+  const shipping = this.shippingCost || 0;
+
+  return {
+    subtotal,
+    discount,
+    tax,
+    shipping,
+    total: subtotal - discount + tax + shipping,
+  };
+};
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -22,26 +22,62 @@ exports.createPaymentIntent = asyncHandler(async (req, res, next) => {
     );
   }
 
+  // Check if payment is already completed
+  if (order.paymentStatus === "completed") {
+    return next(new ApiError(400, "This order has already been paid"));
+  }
+
   // Create a payment intent
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: Math.round(order.totalAmount * 100), // Stripe requires amount in cents
-    currency: "usd",
-    metadata: {
-      orderId: order._id.toString(),
-      userId: req.user._id.toString(),
-    },
-    description: `Order #${order._id} payment`,
-  });
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(order.totalAmount * 100), // Stripe requires amount in cents
+      currency: "usd",
+      metadata: {
+        orderId: order._id.toString(),
+        userId: req.user._id.toString(),
+      },
+      description: `Order #${order._id} payment`,
+    });
 
-  // Update order with payment intent ID
-  order.stripePaymentIntentId = paymentIntent.id;
-  order.updatedAt = Date.now();
-  await order.save();
+    // Update order with payment intent ID and record attempt
+    order.stripePaymentIntentId = paymentIntent.id;
+    order.updatedAt = Date.now();
 
-  res.status(200).json({
-    status: "success",
-    clientSecret: paymentIntent.client_secret,
-  });
+    // Track payment attempt
+    if (!order.paymentAttempts) {
+      order.paymentAttempts = [];
+    }
+
+    order.paymentAttempts.push({
+      attemptedAt: Date.now(),
+      status: "intent_created",
+      errorMessage: null,
+    });
+
+    await order.save();
+
+    res.status(200).json({
+      status: "success",
+      clientSecret: paymentIntent.client_secret,
+    });
+  } catch (error) {
+    // Record failed attempt
+    if (!order.paymentAttempts) {
+      order.paymentAttempts = [];
+    }
+
+    order.paymentAttempts.push({
+      attemptedAt: Date.now(),
+      status: "intent_failed",
+      errorMessage: error.message,
+    });
+
+    await order.save();
+
+    return next(
+      new ApiError(400, `Payment processing error: ${error.message}`)
+    );
+  }
 });
 
 // @desc    Confirm payment success
@@ -140,3 +176,50 @@ async function handleFailedPayment(paymentIntent) {
     await order.save();
   }
 }
+
+// Add these new methods to your payment.js controller
+
+// @desc    Get payment details by ID
+// @route   GET /api/payments/:paymentIntentId
+// @access  Private
+exports.getPaymentDetails = asyncHandler(async (req, res, next) => {
+  const { paymentIntentId } = req.params;
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  const order = await Order.findOne({ stripePaymentIntentId: paymentIntentId })
+    .populate("user", "name email")
+    .populate("items.product", "name images");
+  if (!order) return next(new ApiError(404, "Order not found"));
+  if (
+    order.user._id.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    return next(new ApiError(403, "Not authorized"));
+  }
+  res.status(200).json({ status: "success", data: { paymentIntent, order } });
+});
+
+exports.processRefund = asyncHandler(async (req, res, next) => {
+  const { paymentIntentId, amount, reason } = req.body;
+  const order = await Order.findOne({ stripePaymentIntentId: paymentIntentId });
+  if (!order) return next(new ApiError(404, "Order not found"));
+  const refund = await stripe.refunds.create({
+    payment_intent: paymentIntentId,
+    amount: amount ? Math.round(amount * 100) : undefined,
+    reason,
+  });
+  order.paymentStatus =
+    amount && amount < order.totalAmount ? "partially_refunded" : "refunded";
+  order.refundId = refund.id;
+  order.refundAmount = amount || order.totalAmount;
+  order.refundReason = reason;
+  order.updatedAt = Date.now();
+  await order.save();
+  res.status(200).json({ status: "success", data: { refund, order } });
+});
+
+exports.getAllPayments = asyncHandler(async (req, res) => {
+  const orders = await Order.find()
+    .populate("user", "name email")
+    .populate("items.product", "name images");
+  res.status(200).json({ status: "success", data: orders });
+});

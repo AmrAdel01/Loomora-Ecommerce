@@ -54,5 +54,5 @@ router.get("/me", protect, getCurrentUser);
 router.put("/me", protect, updateUserValidator, updateMyProfile);
 router
   .route("/me/change-password/:id")
-  .post(changePasswordValidator, changePassword);
+  .post(protect, changePasswordValidator, changePassword);
 module.exports = router;

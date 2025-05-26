@@ -13,8 +13,9 @@ const couponRouter = require("./routes/coupon");
 const categoryRouter = require("./routes/category");
 const orderRouter = require("./routes/order");
 const paymentRoutes = require("./routes/payment");
+const analyticsRouter = require("./routes/analytics");
 
-// Middleware
+// Add this to your routes section
 const globalErrorHandler = require("./middleware/errorHandler");
 const routeNotFoundHandler = require("./middleware/routeNotFoundHandler");
 
@@ -48,6 +49,7 @@ app.use("/api/v1/", couponRouter);
 app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/orders", orderRouter);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/analytics", analyticsRouter);
 
 // Error Handling
 app.use(routeNotFoundHandler);
